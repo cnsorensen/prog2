@@ -13,8 +13,9 @@ Modifications:
 
 // include files
 #include <iostream>
-using namespace std;
 
+using namespace std;
+#include "quadtree.h"
 // the GLUT header automatically includes gl.h and glu.h
 #include <GL/glut.h>
 
@@ -30,6 +31,7 @@ int ScreenHeight =  768;
 
 byte* BMPimage;		// array of RGB pixel values (range 0 to 255)
 byte* image;        // array of bytes to store monochrome image (for quadtree encoding)
+byte* compressed;
 int nrows, ncols;   // image dimensions
 
 // OpenGL callback function prototypes
@@ -37,11 +39,12 @@ void display( void );
 void reshape( int w, int h );
 void keyboard( unsigned char key, int x, int y );
 
+
 // other function prototypes
 void initOpenGL( const char *filename, int nrows, int ncols );
 bool LoadBmpFile( const char* filename, int &nrows, int &ncols, byte* &image );
 void displayColor( int x, int y, int w, int h, byte *image );
-void displayMonochrome( int x, int y, int w, int h, byte *image );
+void displayMonochrome( int x, int y, int w, int h, byte *compressed );
 
 /******************************************************************************/
 
@@ -61,7 +64,7 @@ int main( int argc, char *argv[] )
         return -1;
     }
     cerr << "reading " << argv[1] << ": " << nrows << " x " << ncols << endl;
-
+  
     // convert 24-bit color BMP image to 8-bit monochrome image
     image = new byte [nrows * ncols ];
     byte* BMPptr = BMPimage, *imageptr = image;
@@ -71,7 +74,26 @@ int main( int argc, char *argv[] )
             *imageptr++ = 0.30 * BMPptr[0] + 0.59 * BMPptr[1] + 0.11 * BMPptr[2] + 0.5;
             BMPptr += 3;
         }
-
+        
+        
+        
+    //instantiate a tree and begin insertion based on tolerance value
+    int tolerance = atoi(argv[2]);
+      
+    quadtree tree;
+    tree.insert( 0, nrows, image, tolerance, tree.root );
+    compressed = new byte [nrows * ncols];
+    tree.fillArr( compressed, tree.root, 0, nrows );
+        //void fillArr( unsigned char *compressed, node *&Tree, int index, int size );
+        
+        
+   /* for ( int h = 0; h < nrows*ncols; h++)
+    {
+        if ( h % nrows == 0 )
+            cout << endl;
+        cout << compressed[h];
+    }*/
+    
     // perform various OpenGL initializations
     glutInit( &argc, argv );
     initOpenGL( argv[1], nrows, ncols );
@@ -115,8 +137,8 @@ void display( void )
     glClear( GL_COLOR_BUFFER_BIT );
 
     // display image in color and monochrome
-    displayColor( 0, 0, ncols, nrows, BMPimage );
-    displayMonochrome( ncols, 0, ncols, nrows, image );
+    displayColor( 0, 0, ncols, nrows, image );
+    displayMonochrome( ncols, 0, ncols, nrows, compressed );
 
     // flush graphical output
     glFlush();

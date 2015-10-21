@@ -10,7 +10,7 @@ Ref: Based on code from RgbImage.cc (Buss, 3-D Computer Graphics, 2003).
 */
 
 #include <cstdio>
-
+//#include "quadtree.h"
 // prototypes
 bool LoadBmpFile( const char* filename, int &NumRows, int &NumCols, unsigned char* &ImagePtr );
 static short readShort( FILE* infile );
@@ -91,7 +91,7 @@ bool LoadBmpFile( const char* filename, int &NumRows, int &NumCols, unsigned cha
             *( cPtr++ ) = 0;
         }
     }
-
+    
     // and... we should be done
     if ( feof( infile ) )
     {
@@ -101,6 +101,8 @@ bool LoadBmpFile( const char* filename, int &NumRows, int &NumCols, unsigned cha
     }
 
     fclose( infile );	// Close the file
+
+     
 
     return true;
 }

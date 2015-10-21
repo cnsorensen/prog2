@@ -1,32 +1,29 @@
 #include <iostream>
 using namespace std;
+#ifndef _Quadtree_H_
+#define _Quadtree_H_
 
+struct node
+{   //data
+    int avg;
+    bool leaf;
+    node *child[4];
+};
 
-typedef unsigned char byte;
 class quadtree
 {
     public:
 //functions
-    insert ( int start, int size, byte *image, int tolerance );
-    /*store average color value:
-        if (int (max - min) > tolerance )
-            bool variable = false  and split into quads
-        else
-            bool variable = true   and this is a leaf*/
+    quadtree( );
+    //insert to tree from 1-D char *image array 
+    void insert( int start, int size, unsigned char *image, int tolerance, node *&Tree );
+    //fill compressed image array with simplified values for output
+    void fillArr( unsigned char *compressed, node *&Tree, int index, int size );
+    ~quadtree();
     
-    
-    //moveToArray (recursive )
-        
-    
-
-    private:
-    struct node
-    {
-        //data
-        /*average color value*/
-        bool leaf = true;
-        node *child1, *child2, *child3, *child4;
-    };
-    
-    node *root = nullptr;
+    //compiler was giving errors with root as private data
+    //I made root public and errors went away
+    node *root;
 };
+
+#endif

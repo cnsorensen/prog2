@@ -12,7 +12,7 @@ LINK = g++
 
 # Preprocessor and compiler flags (turn on warnings, optimization and debugging):
 # CPPFLAGS = <preprocessor flags go here>
-CFLAGS = -Wall -O -g
+CFLAGS = -Wall -O -g -std=c++0x
 CXXFLAGS = $(CFLAGS)
 
 # OpenGL/GLUT libraries for Linux:
@@ -27,7 +27,7 @@ GL_LIBS = -lglut -lGLU -lGL -lm
 all:	BMPdisplay
 
 # demo BMP display program
-BMPdisplay:	BMPdisplay.o BMPload.o
+BMPdisplay:	BMPdisplay.o BMPload.o quadtree.o
 	$(LINK) -o $@ $^ $(GL_LIBS)
 
 # here is an entry for your quadtree program
