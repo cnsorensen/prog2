@@ -76,23 +76,15 @@ int main( int argc, char *argv[] )
         }
         
         
-        
-    //instantiate a tree and begin insertion based on tolerance value
+    //instantiate a tree and begin insertion based on tolerance value and image array
     int tolerance = atoi(argv[2]);
-      
     quadtree tree;
-    tree.insert( 0, nrows, image, tolerance, tree.root );
+    tree.insert( 0, nrows, image, tolerance, tree.root, nrows );
+    //make and fill compressed array from average values of image array stored in tree
     compressed = new byte [nrows * ncols];
-    tree.fillArr( compressed, tree.root, 0, nrows );
-        //void fillArr( unsigned char *compressed, node *&Tree, int index, int size );
-        
-        
-   /* for ( int h = 0; h < nrows*ncols; h++)
-    {
-        if ( h % nrows == 0 )
-            cout << endl;
-        cout << compressed[h];
-    }*/
+    tree.fillArr( compressed, tree.root, 0, nrows, nrows );
+    
+    
     
     // perform various OpenGL initializations
     glutInit( &argc, argv );

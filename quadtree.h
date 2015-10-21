@@ -16,9 +16,9 @@ class quadtree
 //functions
     quadtree( );
     //insert to tree from 1-D char *image array 
-    void insert( int start, int size, unsigned char *image, int tolerance, node *&Tree );
+    void insert( int start, int size, unsigned char *image, int tolerance, node *&Tree, int fullsize );
     //fill compressed image array with simplified values for output
-    void fillArr( unsigned char *compressed, node *&Tree, int index, int size );
+    void fillArr( unsigned char *compressed, node *&Tree, int index, int size, int fullsize );
     ~quadtree();
     
     //compiler was giving errors with root as private data
