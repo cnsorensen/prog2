@@ -16,7 +16,7 @@ class quadtree
 //functions
     quadtree( );
     //insert to tree from 1-D char *image array 
-    void insert( int start, int size, unsigned char *image, int tolerance, node *&Tree, int fullsize );
+    void insert( int start, int size, unsigned char *image, int tolerance, node *&Tree, int fullsize, unsigned char *quads );
     //fill compressed image array with simplified values for output
     void fillArr( unsigned char *compressed, node *&Tree, int index, int size, int fullsize );
     ~quadtree();

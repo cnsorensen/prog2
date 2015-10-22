@@ -9,7 +9,7 @@ quadtree::quadtree()
 
 quadtree::~quadtree()
 { }
-void quadtree::insert( int start, int size, unsigned char *image, int tolerance, node *&Tree, int fullsize )
+void quadtree::insert( int start, int size, unsigned char *image, int tolerance, node *&Tree, int fullsize, unsigned char *quads )
 {
   int i = start, j;
   //start max and min values to the first value checked in quad for comparisons
@@ -52,21 +52,65 @@ void quadtree::insert( int start, int size, unsigned char *image, int tolerance,
     Tree->leaf = false;
     
     //Top left starting coordinate with appropriate size
-    insert ( start, size/2, image, tolerance, Tree->child[0], fullsize );
+    insert ( start, size/2, image, tolerance, Tree->child[0], fullsize, quads );
      
     //Top right starting coordinate with appropriate size
-    insert ( (start + size/2), size/2, image, tolerance, Tree->child[1], fullsize );
+    insert ( (start + size/2), size/2, image, tolerance, Tree->child[1], fullsize, quads );
     
     //Bottom left starting coordinate with size
-    insert ( (start + (fullsize * size/2) ), size/2, image, tolerance, Tree->child[2], fullsize );
+    insert ( (start + (fullsize * size/2) ), size/2, image, tolerance, Tree->child[2], fullsize, quads );
     
     //Bottom right starting coordinate with size
-    insert (( start + (fullsize * size/2) + size/2), size/2, image, tolerance, Tree->child[3], fullsize );
+    insert (( start + (fullsize * size/2) + size/2), size/2, image, tolerance, Tree->child[3], fullsize, quads );
   }
   
   //else tolerance value was good for this quad and it's a leaf node
   else
+  {
     Tree->leaf = true;
+    i = start;
+    //set pixels along the top border of the box to white
+    for ( j = 0; j <= size; j++ )
+    {
+        quads[i] = 255;
+        i++;
+    }
+    
+    //set i to 1 below the start position
+    i = start + fullsize;
+    
+    //if the border outside the right edge of the box is still within the screen
+    if ( (i + size) % (fullsize - 1) != 0 )
+    {
+        //while i higher up than start position of quad box below 
+        while( i < start + (size*(fullsize)))
+        {
+            quads[i] = 255;
+            i += size;      //move i to far right border
+            quads[i] = 255;
+            i += (fullsize - size); //move i down 1 row and back to left border
+        }
+    }
+    //else only set pixels inside left border
+    else
+    {
+        while ( i < start + (size *(fullsize)))
+        {
+            quads[i] = 255;
+            i += fullsize;
+        }
+    }
+    //if border below bottom edge of the box is still within the screen 
+    // i should already be set to position below the bottom edge of box  
+    if ( i  < (fullsize*fullsize) )
+    {
+        for (j = 0; j <= size; j++ )
+        {
+            quads[i] = 255;
+            i++;
+        }
+    }
+  }
 }
 
 

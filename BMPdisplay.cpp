@@ -21,7 +21,7 @@ using namespace std;
 
 // symbolic constants
 const int EscapeKey = 27;
-
+const int Space = 32;
 // typedefs
 typedef unsigned char byte;
 
@@ -31,14 +31,16 @@ int ScreenHeight =  768;
 
 byte* BMPimage;		// array of RGB pixel values (range 0 to 255)
 byte* image;        // array of bytes to store monochrome image (for quadtree encoding)
-byte* compressed;
+byte* compressed;   // array of bytes holding compressed image values
+byte* quads;        // array of bytes with original image and lines drawn over the top
 int nrows, ncols;   // image dimensions
+bool lines = false;
 
 // OpenGL callback function prototypes
 void display( void );
+void displaylines ( void );
 void reshape( int w, int h );
 void keyboard( unsigned char key, int x, int y );
-
 
 // other function prototypes
 void initOpenGL( const char *filename, int nrows, int ncols );
@@ -74,18 +76,24 @@ int main( int argc, char *argv[] )
             *imageptr++ = 0.30 * BMPptr[0] + 0.59 * BMPptr[1] + 0.11 * BMPptr[2] + 0.5;
             BMPptr += 3;
         }
-        
+
+    // initialize quads array to same values of image array
+    quads = new byte [nrows * ncols];
+    for ( int i= 0; i < nrows*ncols; i++)
+        quads[i] = image[i];
         
     //instantiate a tree and begin insertion based on tolerance value and image array
     int tolerance = atoi(argv[2]);
     quadtree tree;
-    tree.insert( 0, nrows, image, tolerance, tree.root, nrows );
+
+    //lines = 0;
+    tree.insert( 0, nrows, image, tolerance, tree.root, nrows, quads );
+
     //make and fill compressed array from average values of image array stored in tree
     compressed = new byte [nrows * ncols];
+
     tree.fillArr( compressed, tree.root, 0, nrows, nrows );
-    
-    
-    
+        
     // perform various OpenGL initializations
     glutInit( &argc, argv );
     initOpenGL( argv[1], nrows, ncols );
@@ -109,9 +117,12 @@ void initOpenGL( const char *filename, int nrows, int ncols )
     glutInitWindowSize( ScreenWidth, ScreenHeight );	    // initial window size
     glutInitWindowPosition( 100, 50 );			            // initial window  position
     glutCreateWindow( filename );			                // window title
-
+    
     glClearColor( 0.0, 0.0, 0.0, 0.0 );			            // use black for glClear command
-
+    
+    //lines = false;
+    
+    
     // callback routines
     glutDisplayFunc( display );				// how to redisplay window
     glutReshapeFunc( reshape );				// how to resize window
@@ -125,17 +136,39 @@ void initOpenGL( const char *filename, int nrows, int ncols )
 // callback function that tells OpenGL how to redraw window
 void display( void )
 {
+
     // clear the display
     glClear( GL_COLOR_BUFFER_BIT );
-
-    // display image in color and monochrome
-    displayColor( 0, 0, ncols, nrows, image );
-    displayMonochrome( ncols, 0, ncols, nrows, compressed );
-
+    if ( !lines )
+    {
+        // display image in color and monochrome
+        displayColor( 0, 0, ncols, nrows, image );
+        displayMonochrome( ncols, 0, ncols, nrows, compressed );
+    }   
+    
+    if ( lines )
+    {
+        // display image in color and where tree quads are in monochrome
+        displayColor( 0, 0, ncols, nrows, image );
+        displayMonochrome( ncols, 0, ncols, nrows, quads );    
+    } 
     // flush graphical output
     glFlush();
 }
 
+/******************************************************************************/
+void displaylines ( void )
+{ 
+   // clear the display
+    glClear( GL_COLOR_BUFFER_BIT );
+   
+    // display image in color and monochrome
+    displayColor( 0, 0, ncols, nrows, image );
+    displayMonochrome( ncols, 0, ncols, nrows, quads );
+
+    // flush graphical output
+    glFlush();
+}
 /******************************************************************************/
 
 // callback function that tells OpenGL how to resize window
@@ -147,24 +180,31 @@ void reshape( int w, int h )
     ScreenHeight = h;
 
     // how to project 3-D scene onto 2-D
-    glMatrixMode( GL_PROJECTION );		// use an orthographic projection
+    glMatrixMode( GL_PROJECTION );  // use an orthographic projection
     glLoadIdentity();				// initialize transformation matrix
     gluOrtho2D( 0.0, w, 0.0, h );
-    glViewport( 0, 0, w, h );			// adjust viewport to new window
+    glViewport( 0, 0, w, h );		// adjust viewport to new window
 }
 
 /******************************************************************************/
 
 // callback function that tells OpenGL how to handle keystrokes
 void keyboard( unsigned char key, int x, int y )
-{
+{   
+    bool lines; 
     switch ( key )
     {
             // Escape quits program
         case EscapeKey:
             exit( 0 );
             break;
-
+        case Space:
+            //displaylines();
+            //display();
+            lines = !lines;
+            cout << lines << "  " << endl;
+           // break;
+            
             // anything else redraws window
         default:
             glutPostRedisplay();
