@@ -53,9 +53,9 @@ void displayMonochrome( int x, int y, int w, int h, byte *compressed );
 // main() function
 int main( int argc, char *argv[] )
 {
-    if ( argc < 2 )
+    if ( argc < 3 )
     {
-        cerr << "Usage: BMPdisplay image.bmp\n";
+        cerr << "Usage: BMPdisplay image.bmp threshold\n";
         return -1;
     }
 
@@ -196,6 +196,7 @@ void keyboard( unsigned char key, int x, int y )
     {
             // Escape quits program
         case EscapeKey:
+        case 'q':
             exit( 0 );
             break;
         case Space:
