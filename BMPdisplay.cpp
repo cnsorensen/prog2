@@ -34,11 +34,10 @@ byte* image;        // array of bytes to store monochrome image (for quadtree en
 byte* compressed;   // array of bytes holding compressed image values
 byte* quads;        // array of bytes with original image and lines drawn over the top
 int nrows, ncols;   // image dimensions
-bool lines = false;
+bool lines = true;
 
 // OpenGL callback function prototypes
 void display( void );
-void displaylines ( void );
 void reshape( int w, int h );
 void keyboard( unsigned char key, int x, int y );
 
@@ -157,19 +156,6 @@ void display( void )
 }
 
 /******************************************************************************/
-void displaylines ( void )
-{ 
-   // clear the display
-    glClear( GL_COLOR_BUFFER_BIT );
-   
-    // display image in color and monochrome
-    displayColor( 0, 0, ncols, nrows, image );
-    displayMonochrome( ncols, 0, ncols, nrows, quads );
-
-    // flush graphical output
-    glFlush();
-}
-/******************************************************************************/
 
 // callback function that tells OpenGL how to resize window
 // note that this is called when the window is first created
@@ -199,13 +185,10 @@ void keyboard( unsigned char key, int x, int y )
             exit( 0 );
             break;
         case Space:
-            //displaylines();
-            //display();
+
             lines = !lines;
-            cout << lines << "  " << endl;
-           // break;
-            
-            // anything else redraws window
+
+           // don't break, drop through to redraw
         default:
             glutPostRedisplay();
             break;
