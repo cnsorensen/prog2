@@ -13,7 +13,6 @@ Modifications:
 
 // include files
 #include <iostream>
-
 using namespace std;
 #include "quadtree.h"
 // the GLUT header automatically includes gl.h and glu.h
@@ -22,6 +21,15 @@ using namespace std;
 // symbolic constants
 const int EscapeKey = 27;
 const int Space = 32;
+const int Q = 113;
+const int Plus = 43;
+const int Minus = 45;
+
+// globals to track values needed
+int tolerance = 0;
+int totalNodes = 0;
+int totalLeaves = 0;
+
 // typedefs
 typedef unsigned char byte;
 
@@ -29,12 +37,17 @@ typedef unsigned char byte;
 int ScreenWidth  = 1024;
 int ScreenHeight =  768;
 
-byte* BMPimage;		// array of RGB pixel values (range 0 to 255)
-byte* image;        // array of bytes to store monochrome image (for quadtree encoding)
-byte* compressed;   // array of bytes holding compressed image values
-byte* quads;        // array of bytes with original image and lines drawn over the top
+//global tree instance
+quadtree tree;
+
 int nrows, ncols;   // image dimensions
-bool lines = true;
+bool lines = false; // track display for compressed image or quad lines image
+
+
+byte* BMPimage;		    // array of RGB pixel values (range 0 to 255)
+byte* image;            // array of bytes to store monochrome image (for quadtree encoding)
+byte* compressed;       // array of bytes holding colored compressed image values
+byte* quads;            // array of bytes holding colored image and lines drawn over the top
 
 // OpenGL callback function prototypes
 void display( void );
@@ -66,6 +79,10 @@ int main( int argc, char *argv[] )
     }
     cerr << "reading " << argv[1] << ": " << nrows << " x " << ncols << endl;
   
+    //values for outputting compression stats
+    int L2;
+    int Nsquared = nrows * ncols;
+  
     // convert 24-bit color BMP image to 8-bit monochrome image
     image = new byte [nrows * ncols ];
     byte* BMPptr = BMPimage, *imageptr = image;
@@ -81,26 +98,39 @@ int main( int argc, char *argv[] )
     for ( int i= 0; i < nrows*ncols; i++)
         quads[i] = image[i];
         
+        
     //instantiate a tree and begin insertion based on tolerance value and image array
-    int tolerance = atoi(argv[2]);
-    quadtree tree;
+    tolerance = atoi(argv[2]);
 
-    //lines = 0;
     tree.insert( 0, nrows, image, tolerance, tree.root, nrows, quads );
 
     //make and fill compressed array from average values of image array stored in tree
     compressed = new byte [nrows * ncols];
 
-    tree.fillArr( compressed, tree.root, 0, nrows, nrows );
-        
+    //fill the compressed array with average tree values and count node types
+    tree.fillArr( compressed, tree.root, 0, nrows, nrows, totalLeaves, totalNodes );
+    L2 = 2 * totalLeaves;
+    
+    //Output compression values based off of original user input
+    cout << "Original image size : " << Nsquared << endl
+         << "Leaves in compression tree for original values : " << totalLeaves << endl 
+         << "Compression factor from original values : " << 100 * L2 / Nsquared << '%' 
+         << " of the original image."<< endl;
+    
     // perform various OpenGL initializations
     glutInit( &argc, argv );
     initOpenGL( argv[1], nrows, ncols );
 
     // go into OpenGL/GLUT main loop, never to return
     glutMainLoop();
+    
+    //free up memory before final program quit
+    delete [] image;
+    delete [] compressed;
+    delete [] quads;
 
-    // yeah I know, but it keeps compilers from bitching
+    tree.~quadtree( );
+
     return 0;
 }
 
@@ -113,14 +143,11 @@ void initOpenGL( const char *filename, int nrows, int ncols )
 
     ScreenWidth = 2 * ncols;
     ScreenHeight = nrows;
-    glutInitWindowSize( ScreenWidth, ScreenHeight );	    // initial window size
+    glutInitWindowSize( ScreenWidth, ScreenHeight );   // initial window size
     glutInitWindowPosition( 100, 50 );			            // initial window  position
     glutCreateWindow( filename );			                // window title
     
     glClearColor( 0.0, 0.0, 0.0, 0.0 );			            // use black for glClear command
-    
-    //lines = false;
-    
     
     // callback routines
     glutDisplayFunc( display );				// how to redisplay window
@@ -135,22 +162,24 @@ void initOpenGL( const char *filename, int nrows, int ncols )
 // callback function that tells OpenGL how to redraw window
 void display( void )
 {
-
     // clear the display
     glClear( GL_COLOR_BUFFER_BIT );
+
+    //if spacebar pressed an even number of times
     if ( !lines )
-    {
+    {   
         // display image in color and monochrome
         displayColor( 0, 0, ncols, nrows, image );
         displayMonochrome( ncols, 0, ncols, nrows, compressed );
-    }   
-    
+    }
+    //if spacebar pressed an odd number of times
     if ( lines )
     {
         // display image in color and where tree quads are in monochrome
         displayColor( 0, 0, ncols, nrows, image );
         displayMonochrome( ncols, 0, ncols, nrows, quads );    
     } 
+    
     // flush graphical output
     glFlush();
 }
@@ -177,22 +206,43 @@ void reshape( int w, int h )
 // callback function that tells OpenGL how to handle keystrokes
 void keyboard( unsigned char key, int x, int y )
 {   
-    bool lines; 
     switch ( key )
     {
+
             // Escape quits program
         case EscapeKey:
             exit( 0 );
             break;
+            // 'q' key quits program
+        case Q:
+            exit( 0 );
+            break;
+            // space bar displays or removes quad lines
         case Space:
-
             lines = !lines;
-
-           // don't break, drop through to redraw
-        default:
-            glutPostRedisplay();
+            break;
+            // '+' key increments tolerance value and reforms compressed and quad images
+        case Plus:
+            tolerance += 1;
+            for (int i = 0; i < nrows*ncols; i++)
+                quads [i] = image[i];
+            tree.insert( 0, nrows, image, tolerance, tree.root, nrows, quads );
+            tree.fillArr( compressed, tree.root, 0, nrows, nrows, totalLeaves, totalNodes );
+            break;
+            // '-' key decrements tolerance value and reforms compressed and quad images
+        case Minus:
+            if ( tolerance > 0 )
+                tolerance -= 1;
+            for ( int i = 0; i < nrows*ncols; i++)
+                quads[i] = image[i];
+            tree.insert( 0, nrows, image, tolerance, tree.root, nrows, quads );
+            tree.fillArr( compressed, tree.root, 0, nrows, nrows, totalLeaves, totalNodes );
+            break;
+            
+        default:    //any other key press does nothing
             break;
     }
+    glutPostRedisplay();
 }
 
 /******************************************************************************/
@@ -210,3 +260,5 @@ void displayMonochrome( int x, int y, int w, int h, byte* image )
     glRasterPos2i( x, y );
     glDrawPixels( w, h, GL_LUMINANCE, GL_UNSIGNED_BYTE, image );
 }
+
+/*****************************************************************************/

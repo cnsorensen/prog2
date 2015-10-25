@@ -8,8 +8,13 @@ quadtree::quadtree()
 }
 
 quadtree::~quadtree()
-{ }
-void quadtree::insert( int start, int size, unsigned char *image, int tolerance, node *&Tree, int fullsize, unsigned char *quads )
+{ 
+    for (int i=3; i >= 0; i--)
+            delete this->root->child[i];
+    this->root= nullptr;
+}
+
+void quadtree::insert( int start, int size, byte *image, int tolerance, node *&Tree, int fullsize, byte *quads )
 {
   int i = start, j;
   //start max and min values to the first value checked in quad for comparisons
@@ -68,6 +73,7 @@ void quadtree::insert( int start, int size, unsigned char *image, int tolerance,
   else
   {
     Tree->leaf = true;
+
     i = start;
     //set pixels along the top border of the box to white
     for ( j = 0; j <= size; j++ )
@@ -114,30 +120,31 @@ void quadtree::insert( int start, int size, unsigned char *image, int tolerance,
 }
 
 
-void quadtree::fillArr( unsigned char *compressed, node *&Tree, int index, int size, int fullsize )
+void quadtree::fillArr( unsigned char *compressed, node *&Tree, int index, int size, int fullsize, int &leaves, int &nodes )
 {
     int i, j; 
     if ( Tree == nullptr )
         return;
-      
+    nodes += 1;
     //if the node isn't a leaf, recurse down for values
     if ( Tree-> leaf == false )
     {
         //fill compressed image array for Q1 of current section
-        fillArr( compressed, Tree->child[0], index, size/2, fullsize );
+        fillArr( compressed, Tree->child[0], index, size/2, fullsize, leaves, nodes );
         
         //fill compressed image array for Q2 of current section
-        fillArr( compressed, Tree->child[1], (index + size/2), size/2, fullsize );
+        fillArr( compressed, Tree->child[1], (index + size/2), size/2, fullsize, leaves, nodes );
         
         //fill compressed image array for Q3 of current section
-        fillArr( compressed, Tree->child[2], (index + ( fullsize * size/2)), size/2, fullsize );
+        fillArr( compressed, Tree->child[2], (index + ( fullsize * size/2)), size/2, fullsize, leaves, nodes );
         
         //fill compressed image array for Q4 of current section
-        fillArr( compressed, Tree->child[3], ( index + (fullsize * size/2) + size/2), size/2, fullsize );
+        fillArr( compressed, Tree->child[3], ( index + (fullsize * size/2) + size/2), size/2, fullsize, leaves, nodes );
     }
    
    else if ( Tree->leaf == true )
    {
+   leaves += 1;
      i = index;
    //Same algorithm from insert funciton
    //traverses width of a quadrant in a 2-D fashion
